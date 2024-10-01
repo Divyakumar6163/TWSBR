@@ -6,7 +6,7 @@
 Adafruit_MPU6050 mpu;
 
 // Define PID parameters
-float Kp = 5;
+float Kp = 50;
 float Ki = 0;
 float Kd = 0;
 
