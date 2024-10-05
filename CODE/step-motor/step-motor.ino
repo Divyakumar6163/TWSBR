@@ -6,7 +6,7 @@ const int stepsPerRevolution = 200;
 void setup()
 {
   // Declare pins as Outputs
-  pinMode(LED_BUILTIN, OUTPUT);  
+  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
 }
@@ -25,7 +25,7 @@ void loop()
     delayMicroseconds(2000); // 2ms delay
   }
   delay(1000); // Wait a second
-  
+
   // Set motor direction counterclockwise
   digitalWrite(dirPin, LOW);
 
@@ -39,11 +39,10 @@ void loop()
   }
   delay(1000); // Wait a second
 
-
-  digitalWrite(LED_BUILTIN, LOW);  // Turn the LED on (Note that LOW is the voltage level
+  digitalWrite(LED_BUILTIN, LOW); // Turn the LED on (Note that LOW is the voltage level
   // but actually the LED is on; this is because
   // it is active low on the ESP-01)
-  delay(1000);                      // Wait for a second
-  digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
-  delay(2000);   
+  delay(1000);                     // Wait for a second
+  digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off by making the voltage HIGH
+  delay(2000);
 }

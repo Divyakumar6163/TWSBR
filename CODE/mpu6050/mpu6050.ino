@@ -7,20 +7,23 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
-int count=0;
+int count = 0;
 Adafruit_MPU6050 mpu;
 
-void setup(void) {
-  Serial.begin(115200);
+void setup(void)
+{
+  Serial.begin(19200);
   while (!Serial)
     delay(1000); // will pause Zero, Leonardo, etc until serial console opens
 
   Serial.println("Adafruit MPU6050 test!");
 
   // Try to initialize!
-  if (!mpu.begin()) {
+  if (!mpu.begin())
+  {
     Serial.println("Failed to find MPU6050 chip");
-    while (1) {
+    while (1)
+    {
       delay(10);
     }
   }
@@ -28,7 +31,8 @@ void setup(void) {
 
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   Serial.print("Accelerometer range set to: ");
-  switch (mpu.getAccelerometerRange()) {
+  switch (mpu.getAccelerometerRange())
+  {
   case MPU6050_RANGE_2_G:
     Serial.println("+-2G");
     break;
@@ -44,7 +48,8 @@ void setup(void) {
   }
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   Serial.print("Gyro range set to: ");
-  switch (mpu.getGyroRange()) {
+  switch (mpu.getGyroRange())
+  {
   case MPU6050_RANGE_250_DEG:
     Serial.println("+- 250 deg/s");
     break;
@@ -61,7 +66,8 @@ void setup(void) {
 
   mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
   Serial.print("Filter bandwidth set to: ");
-  switch (mpu.getFilterBandwidth()) {
+  switch (mpu.getFilterBandwidth())
+  {
   case MPU6050_BAND_260_HZ:
     Serial.println("260 Hz");
     break;
@@ -90,12 +96,11 @@ void setup(void) {
   Serial.print("123321");
 }
 
-void loop() {
-  /* Get new sensor events with the readings */
+void loop()
+{
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
 
-  /* Print out the values */
   Serial.print("count=");
   Serial.println(count);
   Serial.print("Acceleration X: ");
