@@ -6,7 +6,7 @@
 Adafruit_MPU6050 mpu;
 
 // PID parameters
-float Kp = 80;
+float Kp = 30;
 float Kd = 0;
 float Ki = 0;
 
@@ -27,7 +27,8 @@ float Total_angle[2];
 float rad_to_deg = 180 / 3.141592654;
 
 // Stepper motor pins for ESP8266
-int D0 = 16, D1 = 5, D2 = 4, D3 = 0, D4 = 2, D5 = 14, D6 = 13, D7 = 12;
+// int D0 = 16, D1 = 5, D2 = 4, D3 = 0, D4 = 2, D5 = 14, D6 = 12, D7 = 13; // esp8266
+int D0 = 26, D1 = 27, D2 = 14, D3 = 0, D4 = 2, D5 = 25, D6 = 22, D7 = 21; // esp32
 
 const int dirPinLeft = D1;
 const int stepPinLeft = D2;
@@ -38,21 +39,22 @@ const int stepPinRight = D0;
 AccelStepper stepperLeft(AccelStepper::DRIVER, stepPinLeft, dirPinLeft);
 AccelStepper stepperRight(AccelStepper::DRIVER, stepPinRight, dirPinRight);
 
-const int maxMotorSpeed = 2500; // Max motor speed in steps/sec
-const int maxMotorAccel = 1200; // Max motor acceleration in steps/sec^2
+const int maxMotorSpeed = 200; // Max motor speed in steps/sec
+const int maxMotorAccel = 600; // Max motor acceleration in steps/sec^2
 
 void setup()
 {
   Serial.begin(9600);
   Serial.println("Adafruit MPU6050 test!");
 
-  Wire.begin(D6, D7); // Use D6 and D7 as SCL and SDA
+  Wire.begin(D7, D6); // Use D6 and D7 as SDA and SCL
 
   if (!mpu.begin())
   {
     Serial.println("Failed to find MPU6050 chip, retrying...");
     while (!mpu.begin())
     {
+      Serial.println("Adafruit MPU6050 test!");
       delay(100);
     }
   }
@@ -91,7 +93,7 @@ void controlMotors(int motor_output_left, int motor_output_right)
   // stepperRight.move(+motor_output_right);
 
   stepperLeft.setSpeed(-motor_output_left);
-  stepperRight.setSpeed(motor_output_right);
+  stepperRight.setSpeed(-motor_output_right);
 }
 
 void loop()
@@ -139,6 +141,7 @@ void loop()
   // Serial.println();
 
   motor_output = PIDControl(Total_angle[1]);
+  // motor_output=-100;
   controlMotors(motor_output, motor_output);
 
   // if (stepperLeft.distanceToGo() != 0) {
