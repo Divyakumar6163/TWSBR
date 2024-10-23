@@ -13,14 +13,14 @@
 #include <Wire.h>                                            //Include the Wire.h library so we can communicate with the gyro
 
 int gyro_address = 0x68;                                     //MPU-6050 I2C address (0x68 or 0x69)
-int acc_calibration_value = 237;                            //Enter the accelerometer calibration value
+int acc_calibration_value = -265;                            //Enter the accelerometer calibration value
 
 //Various settings
 float pid_p_gain = 14;                                       //Gain setting for the P-controller (15)
 float pid_i_gain = 1;                                      //Gain setting for the I-controller (1.5)
 float pid_d_gain = 2;                                       //Gain setting for the D-controller (30)
-float turning_speed = 30;                                    //Turning speed (20)
-float max_target_speed = 15;                                //Max target speed (100)
+float turning_speed = 10;                                    //Turning speed (20)
+float max_target_speed = 4;                                //Max target speed (100)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Declaring global variables
@@ -33,6 +33,8 @@ int battery_voltage;
 int receive_counter;
 int gyro_pitch_data_raw, gyro_yaw_data_raw, accelerometer_data_raw;
 
+long ir_timer_start;
+
 long gyro_yaw_calibration_value, gyro_pitch_calibration_value;
 
 unsigned long loop_timer;
@@ -40,6 +42,10 @@ unsigned long loop_timer;
 float angle_gyro, angle_acc, angle, self_balance_pid_setpoint;
 float pid_error_temp, pid_i_mem, pid_setpoint, gyro_input, pid_output, pid_last_d_error;
 float pid_output_left, pid_output_right;
+
+const int irPin1=10;
+const int irPin2=11;
+const int irPin3=12;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Setup basic functions
@@ -88,7 +94,12 @@ void setup(){
   pinMode(5, OUTPUT);                                                       //Configure digital poort 2 as output
   pinMode(6, OUTPUT);                                                       //Configure digital poort 3 as output
   pinMode(7, OUTPUT);                                                       //Configure digital poort 4 as output
-  pinMode(8, OUTPUT);  
+  pinMode(8, OUTPUT); 
+
+  
+  pinMode(irPin1, INPUT);                                                   
+  pinMode(irPin2, INPUT);                                                   
+  pinMode(irPin3, INPUT);       
   
   for(receive_counter = 0; receive_counter < 500; receive_counter++){       //Create 500 loops
     if(receive_counter % 15 == 0)digitalWrite(13, !digitalRead(13));        //Change the state of the LED every 15 loops to make the LED blink fast
@@ -110,34 +121,50 @@ void setup(){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Main program loop
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int counter=0;
+int time_counter=0;
 
+int timetorun=750;
 void loop(){
+  counter++; // 4ms
+  time_counter++;
 
-  if(Serial.available()){                                                   //If there is serial data available
-    received_byte = Serial.read();                                          //Load the received serial data in the received_byte variable
-    receive_counter = 0;                                                    //Reset the receive_counter variable
+  if(time_counter>=timetorun){
+    time_counter=0;
   }
+  // if(Serial.available()){                                                   //If there is serial data available
+  //   received_byte = Serial.read();                                          //Load the received serial data in the received_byte variable
+  //   receive_counter = 0;                                                    //Reset the receive_counter variable
+  // }
+
+    int IRL = digitalRead(irPin3);
+    int IRS = digitalRead(irPin2);
+    int IRR = digitalRead(irPin1);
+    // Serial.println(IRL);
+    // Serial.println(IRS);
+    // Serial.println(IRR);
+
+
+
+  if(counter>=45 && time_counter<timetorun/3 && IRS ){
+    if(IRS){
+      received_byte = 0x04;
+        receive_counter=0;
+    }
+
+    counter=0;
+  }
+    // else if(IRL){
+    //   received_byte = 0x01;
+    //   receive_counter=0;
+    // }else if(IRR){
+    //   received_byte = 0x02;
+    //   receive_counter=0;
+    // }
 
   if(receive_counter <= 25)receive_counter ++;                              //The received byte will be valid for 25 program loops (100 milliseconds)
   else received_byte = 0x00;                                                //After 100 milliseconds the received byte is deleted
   
-  if(receive_counter >=10){
-    received_byte = 0x00;  
-  }
-  //Load the battery voltage to the battery_voltage variable.
-  //85 is the voltage compensation for the diode.
-  //Resistor voltage divider => (3.3k + 3.3k)/2.2k = 2.5
-  //12.5V equals ~5V @ Analog 0.
-  //12.5V equals 1023 analogRead(0).
-  //1250 / 1023 = 1.222.
-  //The variable battery_voltage holds 1050 if the battery voltage is 10.5V.
-  // battery_voltage = (analogRead(0) * 1.222) + 85;
-  
-  // if(battery_voltage < 1050 && battery_voltage > 800){                      //If batteryvoltage is below 10.5V and higher than 8.0V
-  //   digitalWrite(13, HIGH);                                                 //Turn on the led if battery voltage is to low
-  //   low_bat = 1;                                                            //Set the low_bat variable to 1
-  // }
-
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //Angle calculations
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
