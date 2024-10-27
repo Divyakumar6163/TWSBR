@@ -1,15 +1,15 @@
-#include <Wire.h>                                            //Include the Wire.h library so we can communicate with the gyro
+#include <Wire.h>                                          
 
-int gyro_address = 0x68;                                     //MPU-6050 I2C address (0x68 or 0x69)
-int acc_calibration_value = 0;                            //Enter the accelerometer calibration value
+int gyro_address = 0x68;                                   
+int acc_calibration_value = 0;                            //the accelerometer calibration value
 
 //Various settings
-float pid_p_gain = 14;                                       //Gain setting for the P-controller (15)
-float pid_i_gain = 01;                                      //Gain setting for the I-controller (1.5)
-float pid_d_gain = 2;                                       //Gain setting for the D-controller (30)
-float turning_speed = 5;                                    //Turning speed (20)
-float turning_speed_slow = 5;                                    //Turning speed (20)
-float max_target_speed = 4;                                //Max target speed (100)
+float pid_p_gain = 14;                                      
+float pid_i_gain = 01;                                      
+float pid_d_gain = 2;                                       
+float turning_speed = 5;                                    
+float turning_speed_slow = 5;                               
+float max_target_speed = 4;                                
 
 byte start, received_byte, low_bat;
 
@@ -72,10 +72,6 @@ void setup(){
   Wire.write(0x03);                                                         //Set the register bits as 00000011 (Set Digital Low Pass Filter to ~43Hz)
   Wire.endTransmission();                                                   //End the transmission with the gyro 
 
-  // pinMode(2, OUTPUT);                                                       //Configure digital poort 2 as output
-  // pinMode(3, OUTPUT);                                                       //Configure digital poort 3 as output
-  // pinMode(4, OUTPUT);                                                       //Configure digital poort 4 as output
-  // pinMode(5, OUTPUT);                                                       //Configure digital poort 5 as output
   pinMode(13, OUTPUT);                                                      //Configure digital poort 6 as output
   
   pinMode(5, OUTPUT);                                                       //Configure digital poort 2 as output
@@ -137,7 +133,6 @@ void loop(){
     // Serial.println(IRR);
     // Serial.println(IRLeft);
     // Serial.println(IRRight);
-
 // Serial.println(angle_gyro_yaw);
 
   if(counter>=30){
@@ -145,7 +140,7 @@ void loop(){
     {
       if(IRLeft){
         turning=true;
-        turningOffset=angle_gyro_yaw;
+        turningOffset=angle_gyro_yaw; 
         turningFinal=turningOffset+90;
       }else if(IRRight){
         turning=true;
@@ -181,20 +176,7 @@ void loop(){
     }
     counter=0;
   }
-  // else if(IRL && !(counter<25 && received_byte==0x04)){
-  //     received_byte = 0x01;
-  //     receive_counter=0;
-  // }else if(IRR  && !(counter<25 && received_byte==0x04)){
-  //   received_byte = 0x02;
-  //   receive_counter=0;
-  // }
-    // else if(IRL){
-    //   received_byte = 0x01;
-    //   receive_counter=0;
-    // }else if(IRR){
-    //   received_byte = 0x02;
-    //   receive_counter=0;
-    // }
+ 
 
   if(receive_counter <= 25)receive_counter ++;                              
   //The received byte will be valid for 25 program loops (100 milliseconds)
