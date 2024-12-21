@@ -1,7 +1,7 @@
 #include <Wire.h>                                          
 
 int gyro_address = 0x68;                                   
-int acc_calibration_value = 0;                            //the accelerometer calibration value
+int acc_calibration_value = 0;                        
 
 //Various settings
 float pid_p_gain = 14;                                      
@@ -297,22 +297,12 @@ void loop(){
   else if(pid_output_right < 0)right_motor = -400 - pid_output_right;
   else right_motor = 0;
 
-  //Copy the pulse time to the throttle variables so the interrupt subroutine can use them
   throttle_left_motor = left_motor;
   throttle_right_motor = right_motor;
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //Loop time timer
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //The angle calculations are tuned for a loop time of 4 milliseconds. To make sure every loop is exactly 4 milliseconds a wait loop
-  //is created by setting the loop_timer variable to +4000 microseconds every loop.
   while(loop_timer > micros());
   loop_timer += 4000;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Interrupt routine  TIMER2_COMPA_vect
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ISR(TIMER2_COMPA_vect){
   //Left motor pulse calculations
   throttle_counter_left_motor ++;                                           //Increase the throttle_counter_left_motor variable by 1 every time this routine is executed
