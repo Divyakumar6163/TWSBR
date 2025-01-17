@@ -1,15 +1,15 @@
 #include <Wire.h>                                          
 
 int gyro_address = 0x68;                                   
-int acc_calibration_value = 0;                            //the accelerometer calibration value
+int acc_calibration_value = 150;                            //the accelerometer calibration value
 
 //Various settings
 float pid_p_gain = 14;                                      
-float pid_i_gain = 01;                                      
-float pid_d_gain = 2;                                       
+float pid_i_gain = 0;//1.1                                      
+float pid_d_gain = 2;//2                                       
 float turning_speed = 5;                                    
 float turning_speed_slow = 5;                               
-float max_target_speed = 4;                                
+float max_target_speed = 10;                                
 
 byte start, received_byte, low_bat;
 
@@ -38,6 +38,7 @@ const int irPin5=3;
 
 
 void setup(){
+  pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);                                                       //Start the serial port at 9600 kbps
   Wire.begin();                                                             //Start the I2C bus as master
   TWBR = 12;                                                                //Set the I2C clock speed to 400kHz
@@ -50,6 +51,24 @@ void setup(){
   TCCR2B |= (1 << CS21);                                                    //Set the CS21 bit in the TCCRB register to set the prescaler to 8
   OCR2A = 39;                                                               //The compare register is set to 39 => 20us / (1s / (16.000.000MHz / 8)) - 1
   TCCR2A |= (1 << WGM21);                                                   //Set counter 2 to CTC (clear timer on compare) mode
+
+
+  // 1sec timer 1 
+  // Configure Timer1 for CTC mode
+  TCCR1A = 0;                 // Clear Timer/Counter Control Register A
+  TCCR1B = 0;                 // Clear Timer/Counter Control Register B
+  TCCR1B |= (1 << WGM12);     // Set WGM12 bit for CTC mode
+  
+  TCCR1B |= (1 << CS12) | (1 << CS10); // Set prescaler to 1024 
+  // Set compare match value for 1 second
+  // OCR1A = 15624;              // 1-second interval with 16 MHz clock and 1024 prescaler
+  // OCR1A = 7812;  //0.5 sec timer
+  OCR1A = 6250;   //0.4sec timer
+  TIMSK1 |= (1 << OCIE1A);    // Enable Timer1 Compare Match A interrupt
+  // sei();    // Enable global interrupts
+  
+
+
   
   //By default the MPU-6050 sleeps. So we have to wake it up.
   Wire.beginTransmission(gyro_address);                                     //Start communication with the address found during search.
@@ -100,88 +119,103 @@ void setup(){
   gyro_yaw_calibration_value /= 500;                                        //Divide the total value by 500 to get the avarage gyro offset
 
   loop_timer = micros() + 4000;                                             //Set the loop_timer variable at the next end loop time
-
 }
 
 int counter=0;
-int time_counter=0;
 
-int timetorun=750;
+// int time_counter=0;
+// int timetorun=750;
+
 bool turning=false;
 long turningOffset=0;
 long turningFinal=0;
+
+int move=-1;
+int turndir=0;
+int leftdetected=0,rightdetected=0;
+int leftdetectedAgain=0,rightdetectedAgain=0;
 void loop(){
   counter++; // 4ms
-  time_counter++;
 
-  if(time_counter>=timetorun){
-    time_counter=0;
-  }
-  // if(Serial.available()){                                                   //If there is serial data available
-  //   received_byte = Serial.read();                                          //Load the received serial data in the received_byte variable
-  //   receive_counter = 0;                                                    //Reset the receive_counter variable
+  int IRL = digitalRead(irPin3);
+  int IRS = digitalRead(irPin2);
+  int IRR = digitalRead(irPin1);
+  int IRLeft = digitalRead(irPin4);
+  int IRRight = digitalRead(irPin5);
+
+  // if(leftdetected && IRLeft){
+  //   leftdetectedAgain=1;
+  //   leftdetected=0;
+  //   turning=1;
+  //   turningOffset=angle_gyro_yaw;
+  //   turningFinal=turningOffset+90;
+
+  // }else if(rightdetected && IRRight){
+  //   rightdetectedAgain=1;
+  //   rightdetected=0;
+  //   turning=1;
+  //   turningOffset=angle_gyro_yaw;
+  //   turningFinal=turningOffset-90;
   // }
 
-    int IRL = digitalRead(irPin3);
-    int IRS = digitalRead(irPin2);
-    int IRR = digitalRead(irPin1);
+  // if(turning==0 && IRLeft){
+  //   leftdetected=1;
+  // }else if(turning=0 && IRRight){
+  //   rightdetected=1; 
+  // }
 
-    int IRLeft = digitalRead(irPin4);
-    int IRRight = digitalRead(irPin5);
-    // Serial.println(IRL);
-    // Serial.println(IRS);
-    // Serial.println(IRR);
-    // Serial.println(IRLeft);
-    // Serial.println(IRRight);
-// Serial.println(angle_gyro_yaw);
+//  if(counter>=30){
+//     // if(move==0 || move==2){
+//     //   received_byte = 0x08;
+//     // }
+//     // else if(move==1){
+//     //   if(turndir){
+//     //     received_byte = 0x10;
+//     //   }else{
+//     //     received_byte = 0x20;
+//     //   }
+//     // }
+//     if(move){
+//       if(turning==0){
+//         if(leftdetected || rightdetected){
+//           received_byte=0x08;
+//         }else if(IRS){
+//           received_byte = 0x04;
+//         }else if(IRR){
+//           received_byte = 0x10;
+//         }else if(IRL){
+//           received_byte = 0x20;
+//         }
+//       }else{
+//         if(abs(turningOffset-turningFinal)>=5){
+//           turningOffset=angle_gyro_yaw;
+//           if(turningOffset>turningFinal){
+//             received_byte = 0x01;
+//             // receive_counter=0;
+//             // Serial.println("Left");
+//           }else{
+//             received_byte = 0x02;
+//             // receive_counter=0;
+//             // Serial.println("Right");
+//           }
+//         }else{
+//           turning=false;
+//           leftdetectedAgain=0;
+//           rightdetectedAgain=0;
+//         }
+//       }
+//     }
+//  }
 
-  if(counter>=30){
-    if(!turning)
-    {
-      if(IRLeft){
-        turning=true;
-        turningOffset=angle_gyro_yaw; 
-        turningFinal=turningOffset+90;
-      }else if(IRRight){
-        turning=true;
-        turningOffset=angle_gyro_yaw;
-        turningFinal=turningOffset-90;
-      }
-      else if(IRS){
-        received_byte = 0x04;
-        receive_counter=0;
-      }
-      else if(IRL){
-        received_byte = 0x10;
-        receive_counter=0;
-      }else if(IRR){
-        received_byte = 0x20;
-        receive_counter=0;
-      }
-    }
-    else if(abs(turningOffset-turningFinal)>=1){
-      turningOffset=angle_gyro_yaw;
-      if(turningOffset>turningFinal){
-        received_byte = 0x01;
-        receive_counter=0;
-        Serial.println("Left");
-      }else{
-        received_byte = 0x02;
-        receive_counter=0;
-        Serial.println("Right");
 
-      }
-    }else{
-      turning=false;
-    }
-    counter=0;
-  }
+  
  
 
-  if(receive_counter <= 25)receive_counter ++;                              
-  //The received byte will be valid for 25 program loops (100 milliseconds)
-  else received_byte = 0x00;                                                //After 100 milliseconds the received byte is deleted
-  
+  if(receive_counter <= 40)receive_counter ++;                              //The received byte will be valid for 25 program loops (100 milliseconds)
+  else {
+      received_byte = 0x8C;                                                //After 100 milliseconds the received byte is deleted
+  }
+
   Wire.beginTransmission(gyro_address);                                     //Start communication with the gyro
   Wire.write(0x3F);                                                         //Start reading at register 3F
   Wire.endTransmission();                                                   //End the transmission
@@ -231,7 +265,8 @@ void loop(){
   pid_last_d_error = pid_error_temp;                                        //Store the error for the next loop
 
   if(pid_output < 5 && pid_output > -5)pid_output = 0;                      //Create a dead-band to stop the motors when the robot is balanced
-
+// Serial.print("Angle Gyro");
+// Serial.println(angle_gyro);
   if(angle_gyro > 30 || angle_gyro < -30 || start == 0 || low_bat == 1){    //If the robot tips over or the start variable is zero or the battery is empty
     pid_output = 0;                                                         //Set the PID controller output to 0 so the motors stop moving
     pid_i_mem = 0;                                                          //Reset the I-controller memory
@@ -269,7 +304,7 @@ void loop(){
     if(pid_output < max_target_speed)pid_setpoint += 0.005;                 //Slowly change the setpoint angle so the robot starts leaning backwards
   }   
 
-  if(!(received_byte & B00001100)){                                         //Slowly reduce the setpoint to zero if no foreward or backward command is given
+  if(!(received_byte & B00001111)){                                         //Slowly reduce the setpoint to zero if no foreward or backward command is given
     if(pid_setpoint > 0.5)pid_setpoint -=0.05;                              //If the PID setpoint is larger then 0.5 reduce the setpoint with 0.05 every loop
     else if(pid_setpoint < -0.5)pid_setpoint +=0.05;                        //If the PID setpoint is smaller then -0.5 increase the setpoint with 0.05 every loop
     else pid_setpoint = 0;                                                  //If the PID setpoint is smaller then 0.5 or larger then -0.5 set the setpoint to 0
@@ -349,4 +384,59 @@ ISR(TIMER2_COMPA_vect){
   // else if(throttle_counter_right_motor == 2)PORTD &= 0b11101111;            //Set output 4 low because the pulse only has to last for 20us
   else if(throttle_counter_right_motor == 1)PORTD |= 0b00100000;            //Set output 5 high to create a pulse for the stepper controller
   else if(throttle_counter_right_motor == 2)PORTD &= 0b11011111;            //Set output 5 low because the pulse only has to last for 20us
+}
+
+int cnt=0;
+int premove=-1;
+ISR(TIMER1_COMPA_vect) {
+  // Example: Toggle the built-in LED
+  // int IRL = digitalRead(irPin3);
+  // int IRS = digitalRead(irPin1);
+  // int IRR = digitalRead(irPin2);
+  // Serial.print(IRL);
+  // Serial.print(" ");
+  // Serial.print(IRS);
+  // Serial.print(" ");
+  // Serial.print(IRR);
+  // Serial.println(" ");
+  
+
+  if(cnt<1){
+    move=1;
+  }else if(cnt<3){
+    move=0;
+  }else{
+    cnt=-1;
+  }
+
+
+  cnt++;
+  receive_counter=0;
+
+  
+
+  // if(cnt<2){
+  //   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  //   // if(cnt==1){
+  //   //   move=(premove+1)%4;
+  //   //   premove = move;
+
+  //   //   if(move==1)
+  //   //     turndir = (turndir+1)%2;
+  //   // }
+  //   if(IRS){
+  //     move=0;
+  //   }else if(IRL){
+  //     move=1;
+  //     turndir=1;
+  //   }else if(IRR){
+  //     move=1;
+  //     turndir=0;
+  //   }
+  // }else if(cnt<4){
+  //   move=-1;
+  // }else{
+  //   cnt=0;
+  // }
+  // Serial.println(move);
 }
