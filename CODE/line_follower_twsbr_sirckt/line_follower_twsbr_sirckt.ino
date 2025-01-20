@@ -171,9 +171,11 @@ void loop(){
  
   if(counter>=30 ){
     if(noIRdet && cntNoIRdetTime>=4){
-      received_byte = 0x04;
-      receive_counter=5;
-      counter=0;
+      // if((cntNoIRdetTime%4)>=2){
+        received_byte = 0x04;
+        receive_counter=5;
+        counter=0;
+      // }
     }
     else if(!turning)
     {
@@ -188,7 +190,7 @@ void loop(){
       // }
       // else 
 
-      if(IRS){
+      if(IRS && received_byte==0){
         started=true;
         received_byte = 0x08;
         receive_counter=5;
@@ -198,16 +200,16 @@ void loop(){
         received_byte = 0x01;
         receive_counter=0;
         counter=0;
-        turning=true;
-        turningOffset=angle_gyro_yaw; 
-        turningFinal=turningOffset-5;
+        // turning=true;
+        // turningOffset=angle_gyro_yaw; 
+        // turningFinal=turningOffset-5;
       }else if(IRR){
         received_byte = 0x02;
         receive_counter=0;
         counter=0;
-        turning=true;
-        turningOffset=angle_gyro_yaw; 
-        turningFinal=turningOffset+5;
+        // turning=true;
+        // turningOffset=angle_gyro_yaw; 
+        // turningFinal=turningOffset+5;
       }
     }
     else if(abs(turningOffset-turningFinal)>=1){
@@ -413,7 +415,7 @@ ISR(TIMER1_COMPA_vect) {
 //  Serial.print(" ");
 //   Serial.print(rightmotorPulse); // Print the right motor pulse
 //   Serial.print(" ");
-//   Serial.println(angle_gyro);    // Print the angle_gyro with a newline
+//   Serial.println(angle_gyro);    // Print the angle_gyro with a newline    
 
   leftmotorPulse=0;
   rightmotorPulse=0;
