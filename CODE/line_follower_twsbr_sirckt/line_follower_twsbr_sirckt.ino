@@ -1,12 +1,12 @@
 #include <Wire.h>                                          
 
 int gyro_address = 0x68;                                   
-int acc_calibration_value = -590;                        
+int acc_calibration_value = -660;                        
 
 //Various settings
-float pid_p_gain = 13;                                      
-float pid_i_gain = 1;                                      
-float pid_d_gain = 3.6;                                       
+float pid_p_gain = 13;    //13                                  
+float pid_i_gain = 0.55; //1                                     
+float pid_d_gain = 5;  //3.6                                     
 float turning_speed = 10;                                    
 float turning_speed_slow = 5;                               
 float max_target_speed = 4;                                
@@ -29,13 +29,25 @@ float angle_gyro,angle_gyro_yaw=0, angle_acc=0, angle, self_balance_pid_setpoint
 float pid_error_temp, pid_i_mem, pid_setpoint, gyro_input, pid_output, pid_last_d_error;
 float pid_output_left, pid_output_right;
 
-const int irPin1=10;
-const int irPin2=11;
-const int irPin3=12;
+// const int irPin1=10;
+// const int irPin2=11;
+// const int irPin3=12;
 
-const int irPin4=2;
-const int irPin5=3;
+// const int irPin4=2;
+// const int irPin5=3;
 
+// const int irPin6=4; //right 90
+// const int irPin7=9; //left 90
+
+const int irPin1=2;//left 90
+const int irPin2=3;
+const int irPin3=4;
+
+const int irPin4=9;
+const int irPin5=10;
+
+const int irPin6=11; 
+const int irPin7=12; //right 90
 
 void setup(){
   Serial.begin(9600);                                                       //Start the serial port at 9600 kbps
@@ -100,7 +112,9 @@ void setup(){
   pinMode(irPin2, INPUT);                                                   
   pinMode(irPin3, INPUT);       
   pinMode(irPin4, INPUT);       
-  pinMode(irPin5, INPUT);        
+  pinMode(irPin5, INPUT); 
+  pinMode(irPin6, INPUT); 
+  pinMode(irPin7, INPUT);        
   
   for(receive_counter = 0; receive_counter < 500; receive_counter++){       //Create 500 loops
     if(receive_counter % 15 == 0)digitalWrite(13, !digitalRead(13));        //Change the state of the LED every 15 loops to make the LED blink fast
@@ -123,7 +137,7 @@ int counter=0;
 int time_counter=0;
 
 int timetorun=750;
-bool turning=false;
+int turning=0;
 long turningOffset=0;
 long turningFinal=0;
 
@@ -131,6 +145,10 @@ int flagIR=0;
 bool started=false;
 bool noIRdet=false;
 int cntNoIRdetTime=0;
+
+int timeFirstDetected=0;
+int leftdetected = 0, rightdetected = 0;
+int leftdetectedAgain = 0, rightdetectedAgain = 0;
 
 void loop(){
   counter++; // 4ms
@@ -144,20 +162,71 @@ void loop(){
   //   receive_counter = 0;                                                    //Reset the receive_counter variable
   // }
 
-    int IRL = digitalRead(irPin1);
-    int IRS = digitalRead(irPin2);
-    int IRR = digitalRead(irPin3);
+    // int IRL = digitalRead(irPin1) | digitalRead(irPin4);
+    // int IRS = digitalRead(irPin2);
+    // int IRR = digitalRead(irPin3) |digitalRead(irPin5);
 
-    int IRLeft = digitalRead(irPin5);
-    int IRRight = digitalRead(irPin4);
+    
+    // int IRLeft = digitalRead(irPin7);
+    // int IRRight = digitalRead(irPin6);
+
+    int IRL = digitalRead(irPin5) | digitalRead(irPin6);
+    int IRS = digitalRead(irPin4);
+    int IRR = digitalRead(irPin2) |digitalRead(irPin3);
+
+    
+    int IRLeft = digitalRead(irPin7);
+    int IRRight = digitalRead(irPin1);
+
+
     // Serial.println(IRL);
     // Serial.println(IRS);
     // Serial.println(IRR);
     // Serial.println(IRLeft);
     // Serial.println(IRRight);
     // Serial.println(angle_gyro_yaw);
+    
+    // Serial.println(received_byte);
+    // Serial.print("Left IR ");
+    // Serial.println(IRLeft);
+    // Serial.print("leftdetected ");
+    // Serial.println(leftdetected);
+    // Serial.print("leftdetectedAgain ");
+    // Serial.println(leftdetectedAgain);
+   
+   
+    if(leftdetected && IRLeft && leftdetectedAgain==0 && timeFirstDetected>1){
+      leftdetectedAgain=1;
+      leftdetected=0;
+      turning=1;
+      turningOffset=angle_gyro_yaw;
+      turningFinal=turningOffset-90;
+      // Serial.print("Left 90");
+      
+    }else if(rightdetected && IRRight && rightdetectedAgain==0 && timeFirstDetected>1){
+      rightdetectedAgain=1;
+      rightdetected=0;
+      turning=1;
+      turningOffset=angle_gyro_yaw;
+      turningFinal=turningOffset+90;
+      // Serial.print("Right 90");
+    }
 
-    if(!IRL && !IRS && !IRR && started){
+      //  Serial.print("turning ");
+      //  Serial.println(turning);
+
+      //  Serial.print("IRLeft ");
+      //  Serial.println(IRLeft);
+
+    if(turning==0 && IRLeft){
+      leftdetected=1;
+      timeFirstDetected=1;
+    }else if(turning==0 && IRRight){
+      rightdetected=1;
+      timeFirstDetected=1;
+    }
+
+    if(!IRL && !IRS && !IRR && !IRLeft && !IRRight && turning==0 && started){
       if(!noIRdet)
       {
         noIRdet=true;
@@ -169,30 +238,39 @@ void loop(){
     }
 
  
-  if(counter>=30 ){
-    if(noIRdet && cntNoIRdetTime>=4){
-      // if((cntNoIRdetTime%4)>=2){
-        received_byte = 0x04;
-        receive_counter=5;
-        counter=0;
-      // }
-    }
-    else if(!turning)
+  if(counter>=30){
+    if(turning==0)
     {
+      // Serial.println("turn=0");
+
       // if(IRLeft){
-      //   turning=true;
+      //   turning=1;
       //   turningOffset=angle_gyro_yaw; 
       //   turningFinal=turningOffset-90;
       // }else if(IRRight){
-      //   turning=true;
+      //   turning=1;
       //   turningOffset=angle_gyro_yaw;
       //   turningFinal=turningOffset+90;
       // }
-      // else 
-
-      if(IRS && received_byte==0){
+      if(noIRdet && cntNoIRdetTime>=4){
+      // if((cntNoIRdetTime%4)>=2){
+        if(received_byte==0){
+          received_byte = 0x08;
+          receive_counter=5;
+          counter=0;
+        }
+      // }
+      }
+      else if(leftdetected || rightdetected){
+        if(received_byte==0){
+          received_byte=0x08;
+          receive_counter=5;
+          counter=0;
+        }
+      }
+      else if(IRS && received_byte==0){
         started=true;
-        received_byte = 0x08;
+        received_byte = 0x04;
         receive_counter=5;
         counter=0;
       }
@@ -200,21 +278,21 @@ void loop(){
         received_byte = 0x01;
         receive_counter=0;
         counter=0;
-        // turning=true;
+        // turning=1;
         // turningOffset=angle_gyro_yaw; 
         // turningFinal=turningOffset-5;
       }else if(IRR){
         received_byte = 0x02;
         receive_counter=0;
         counter=0;
-        // turning=true;
+        // turning=1;
         // turningOffset=angle_gyro_yaw; 
         // turningFinal=turningOffset+5;
       }
     }
-    else if(abs(turningOffset-turningFinal)>=1){
+    else if(abs(turningOffset-turningFinal)>=5){
       turningOffset=angle_gyro_yaw;
-      // Serial.print("hii ");
+      // Serial.println("hii ");
       // Serial.print(turningOffset);
       // Serial.print(" ");
       // Serial.println(turningFinal);
@@ -230,7 +308,14 @@ void loop(){
         // Serial.println("Right");
       }
     }else{
-      turning=false;
+      turning=0;
+      leftdetectedAgain=0;
+      rightdetectedAgain=0;
+      timeFirstDetected=0;
+      // Serial.println("Dhokebaaz");
+      // Serial.print(turningOffset);
+      // Serial.print(" ");
+      // Serial.println(turningFinal);
     }
     // counter=0;
   }
@@ -423,5 +508,6 @@ ISR(TIMER1_COMPA_vect) {
   if(noIRdet){
     cntNoIRdetTime++;
   }
+  if(timeFirstDetected!=0) timeFirstDetected++;
 
 }
