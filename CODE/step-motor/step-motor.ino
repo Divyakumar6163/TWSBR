@@ -1,7 +1,7 @@
 // Define pins for the ESP8266
 const int dirPin = 4;  // GPIO 5
 const int stepPin = 5; // GPIO 4
-const int stepsPerRevolution = 200;
+const int stepsPerRevolution = 1600;
 
 void setup()
 {
@@ -20,9 +20,9 @@ void loop()
   for (int x = 0; x < stepsPerRevolution; x++)
   {
     digitalWrite(stepPin, HIGH);
-    delayMicroseconds(2000); // 2ms delay
+    delayMicroseconds(20); // 2ms delay
     digitalWrite(stepPin, LOW);
-    delayMicroseconds(2000); // 2ms delay
+    delayMicroseconds(20); // 2ms delay
   }
   delay(1000); // Wait a second
 
