@@ -1,1 +1,0 @@
-# TWSBR-CAD-Model

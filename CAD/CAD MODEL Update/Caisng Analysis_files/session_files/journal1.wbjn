@@ -1,0 +1,34 @@
+# encoding: utf-8
+# 2024 R1
+SetScriptVersion(Version="24.1.144")
+template1 = GetTemplate(
+    TemplateName="Static Structural",
+    Solver="ANSYS")
+system1 = template1.CreateSystem()
+geometry1 = system1.GetContainer(ComponentName="Geometry")
+geometry1.SetFile(FilePath="D:/Solidwork Projects/TWSBR CAD Model/CAD MODEL Update/main casing.x_t")
+modelComponent1 = system1.GetComponent(Name="Model")
+modelComponent1.Refresh()
+model1 = system1.GetContainer(ComponentName="Model")
+model1.Edit()
+engineeringData1 = system1.GetContainer(ComponentName="Engineering Data")
+matl1 = engineeringData1.CreateMaterial(Name="PLA")
+matlProp1 = matl1.CreateProperty(
+    Name="Elasticity",
+    Behavior="Isotropic",
+    Qualifiers={"Definition": "", "Behavior": "Isotropic"})
+matlProp1.SetData(
+    Index=-1,
+    Variables=["Poisson's Ratio"],
+    Values=[["0.33"]])
+matlProp1.SetData(
+    Variables=["Young's Modulus"],
+    Values=[["3500000000 [Pa]"]])
+Save(Overwrite=True)
+Save(Overwrite=True)
+geometryComponent1 = system1.GetComponent(Name="Geometry")
+geometryComponent1.Update(AllDependencies=True)
+modelComponent1.Update(AllDependencies=True)
+Save(Overwrite=True)
+Save(Overwrite=True)
+Save(Overwrite=True)
