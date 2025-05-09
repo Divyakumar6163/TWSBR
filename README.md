@@ -56,10 +56,10 @@ The robot uses two NEMA 23 stepper motors driven by a PID controller implemented
 ## Block Diagrams
 
 #### Electronics Block Diagram
-![Electronics Block Diagram](CODE\Circuit_Diagram.jpg)
+![Electronics Block Diagram](https://github.com/Divyakumar6163/TWSBR/blob/main/CODE/Circuit_Diagram.jpg?raw=true)
 
 #### Flowchart
-![Flowchart](CODE\CODE_FLOWCHART.png)
+![Flowchart](https://github.com/Divyakumar6163/TWSBR/blob/main/CODE/CODE_FLOWCHART.png?raw=true)
 
 ## Applications
 
